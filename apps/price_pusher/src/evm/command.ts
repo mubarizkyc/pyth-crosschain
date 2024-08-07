@@ -8,6 +8,8 @@ import { Controller } from "../controller";
 import { EvmPriceListener, EvmPricePusher, PythContractFactory } from "./evm";
 import { getCustomGasStation } from "./custom-gas-station";
 import pino from "pino";
+import { createPublicClient } from "viem";
+import { isWsEndpoint } from "../utils";
 
 export default {
   command: "evm",
@@ -77,7 +79,7 @@ export default {
     ...options.priceServiceConnectionLogLevel,
     ...options.controllerLogLevel,
   },
-  handler: function (argv: any) {
+  handler: async function (argv: any) {
     // FIXME: type checks for this
     const {
       endpoint,
@@ -121,15 +123,16 @@ export default {
       logger.child({ module: "PythPriceListener" })
     );
 
-    const pythContractFactory = new PythContractFactory(
+    const pythContractFactory = await PythContractFactory.create(
       endpoint,
       mnemonic,
       pythContractAddress
     );
+
     logger.info(
-      `Pushing updates from wallet address: ${pythContractFactory
-        .createWeb3PayerProvider()
-        .getAddress()}`
+      `Pushing updates from wallet address: ${
+        pythContractFactory.getAccount().address
+      }`
     );
 
     const evmListener = new EvmPriceListener(
